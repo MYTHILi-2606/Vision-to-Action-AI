@@ -1,0 +1,834 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vision to Action AI | Robotics Studio</title>
+
+<style>
+:root {
+  --bg:#080d18; --panel:#111a2b; --line:#283851;
+  --text:#edf4ff; --muted:#95a7c0; --cyan:#42e8dc;
+  --blue:#6685ff; --green:#50e3a4; --red:#ff8795;
+}
+* { box-sizing:border-box; }
+[hidden] { display:none !important; }
+
+body {
+  margin:0; color:var(--text);
+  background:radial-gradient(ellipse at top,#172a49,#080d18 65%);
+  font:14px/1.55 "Segoe UI",Arial,sans-serif;
+}
+button,input,select { font:inherit; }
+button {
+  padding:11px 15px; border:1px solid #4768b5;
+  border-radius:9px; color:white;
+  background:linear-gradient(135deg,#3867e9,#594be0);
+  cursor:pointer; font-weight:650;
+}
+button:hover { filter:brightness(1.14); }
+button:disabled { opacity:.4;cursor:not-allowed; }
+.secondary { background:#1a2940;border-color:#3b4b66; }
+.danger { background:#6c2639;border-color:#984359; }
+
+header {
+  padding:20px clamp(15px,4vw,48px);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);
+}
+.brand { display:flex;align-items:center;gap:12px; }
+.logo {
+  display:grid;place-items:center;width:44px;height:44px;
+  border-radius:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));
+  color:#07111e;font-size:22px;font-weight:900;
+}
+h1 { font-size:19px;margin:0;letter-spacing:1px; }
+.sub,.muted { color:var(--muted); }
+.sub,.small { font-size:12px; }
+.pill { border:1px solid #285947;color:var(--green);padding:7px 12px;border-radius:30px; }
+
+main { max-width:1500px;margin:auto;padding:25px clamp(12px,3vw,36px) 45px; }
+.hero { display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:22px; }
+.hero h2 { font-size:clamp(25px,3vw,36px);margin:0 0 5px; }
+.hero p { color:var(--muted);margin:0; }
+
+.stats { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px; }
+.stat,.card { background:linear-gradient(145deg,#121e31,#0d1524);border:1px solid var(--line);border-radius:15px; }
+.stat { padding:14px 18px; }
+.stat label { display:block;color:var(--muted);font-size:12px; }
+.stat strong { display:block;font-size:21px;margin-top:4px; }
+
+.layout { display:grid;grid-template-columns:minmax(0,1.5fr) minmax(270px,.8fr);gap:18px; }
+.stack { display:grid;gap:18px;align-content:start; }
+.card { padding:18px;min-width:0; }
+.cardhead { display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:15px; }
+.card h3 { margin:0;font-size:16px; }
+.tag { font-size:11px;color:var(--cyan);background:#14303b;padding:5px 8px;border-radius:6px; }
+
+.field { display:grid;gap:6px;margin:12px 0; }
+.field label { color:var(--muted);font-size:12px; }
+input[type=file],select {
+  width:100%;background:#0b1423;color:var(--text);
+  border:1px solid var(--line);padding:10px;border-radius:8px;
+}
+.row,.actions { display:flex;gap:8px;align-items:center;flex-wrap:wrap; }
+.actions { margin-top:12px; }
+
+.preview {
+  display:block;width:100%;max-height:440px;min-height:200px;
+  object-fit:contain;background:#060a11;border:1px solid var(--line);
+  border-radius:10px;margin-top:12px;
+}
+.status { padding:10px 12px;background:#0a1321;border:1px solid var(--line);border-radius:8px;color:var(--muted);margin:12px 0;overflow-wrap:anywhere; }
+.status.error { color:var(--red);border-color:#723747; }
+.status.ok { color:var(--green);border-color:#285947; }
+
+.results { display:grid;gap:8px; }
+.object {
+  display:block;width:100%;text-align:left;background:#0a1321;
+  border:1px solid var(--line);color:var(--text);padding:12px;border-radius:9px;
+}
+.object.selected { border-color:var(--cyan);background:#102b35; }
+.object strong,.object span { display:block; }
+.object span { color:var(--muted);font-size:12px; }
+
+.empty {
+  display:grid;place-items:center;text-align:center;min-height:120px;
+  border:1px dashed #34455e;border-radius:10px;color:var(--muted);padding:20px;
+}
+
+#robotCanvas {
+  width:100%;height:auto;display:block;aspect-ratio:900/440;
+  background:#08111e;border:1px solid var(--line);border-radius:10px;
+  cursor:crosshair;touch-action:manipulation;
+}
+.hint { font-size:12px;color:var(--muted);margin:9px 0 0; }
+.angles { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px; }
+.angle { padding:11px 6px;text-align:center;background:#0a1321;border:1px solid var(--line);border-radius:9px; }
+.angle span { display:block;color:var(--muted);font-size:11px; }
+.angle strong { display:block;font-size:18px;color:var(--cyan);margin-top:4px; }
+
+.timeline { display:flex;gap:6px;flex-wrap:wrap;margin:14px 0; }
+.stage { padding:7px 9px;background:#0a1321;border:1px solid var(--line);border-radius:7px;color:var(--muted);font-size:11px; }
+.stage.active { color:var(--cyan);border-color:var(--cyan);background:#10252f; }
+
+.photos { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+.photos img { width:100%;aspect-ratio:4/3;object-fit:contain;background:#060a11;border:1px solid var(--line);border-radius:8px; }
+.photo-title { font-weight:650;margin:0 0 7px; }
+footer { text-align:center;color:#71829a;font-size:12px;padding:28px 10px; }
+
+@media(max-width:850px) { .layout { grid-template-columns:1fr; } }
+@media(max-width:500px) {
+  .stats { grid-template-columns:1fr; }
+  .photos { grid-template-columns:1fr; }
+  .card { padding:13px; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">V</div>
+    <div>
+      <h1>VISION TO ACTION AI</h1>
+      <div class="sub">COMPUTER VISION · ROBOTICS SIMULATION</div>
+    </div>
+  </div>
+  <div class="pill">● SOFTWARE SIMULATION</div>
+</header>
+
+<main>
+  <section class="hero">
+    <div>
+      <h2>Robotics Control Studio</h2>
+      <p>Detect objects, select a destination and simulate robotic movement.</p>
+    </div>
+    <div class="sub">YOLO · 2D KINEMATICS · PICK & PLACE</div>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><label>DETECTED OBJECTS</label><strong id="objectCount">0</strong></div>
+    <div class="stat"><label>SELECTED OBJECT</label><strong id="selectedName">None</strong></div>
+    <div class="stat"><label>TASK STATUS</label><strong id="taskStatus">Waiting</strong></div>
+  </section>
+
+  <div class="layout">
+    <div class="stack">
+
+      <section class="card">
+        <div class="cardhead"><h3>01 / Vision Input</h3><span class="tag">CAMERA + UPLOAD</span></div>
+
+        <div class="field">
+          <label for="imageFile">Upload image</label>
+          <input id="imageFile" type="file" accept="image/*">
+        </div>
+
+        <div class="actions">
+          <button id="uploadDetectBtn">Upload & Detect</button>
+          <button id="startBtn" class="secondary">Start Camera</button>
+          <button id="stopBtn" class="danger" disabled>Stop Camera</button>
+          <button id="captureBtn" class="secondary" disabled>Capture & Detect</button>
+        </div>
+
+        <div id="cameraStatus" class="status">Choose an image or start your webcam.</div>
+        <video id="video" class="preview" autoplay playsinline muted hidden></video>
+        <img id="annotatedImage" class="preview" alt="Detection result" hidden>
+        <div id="inputEmpty" class="empty">Uploaded image or camera preview appears here.</div>
+        <canvas id="captureCanvas" hidden></canvas>
+      </section>
+
+      <section class="card">
+        <div class="cardhead"><h3>02 / Detected Objects</h3><span class="tag">YOLO RESULTS</span></div>
+        <p class="muted small">Click an object card to select it.</p>
+        <div id="objectList" class="results"><div class="empty">Upload and detect an image first.</div></div>
+      </section>
+
+      <section class="card">
+        <div class="cardhead"><h3>03 / Robot Workspace</h3><span class="tag">CLICK TO SET TARGET</span></div>
+        <canvas id="robotCanvas" width="900" height="440"></canvas>
+        <p class="hint">Select an object, choose a destination, then calculate angles and execute the virtual pick-and-place.</p>
+
+        <div class="actions">
+          <button id="angleBtn" disabled>Calculate Angles</button>
+          <button id="executeBtn" disabled>▶ Execute Pick & Place</button>
+          <button id="resetBtn" class="secondary">Reset</button>
+        </div>
+
+        <div class="angles">
+          <div class="angle"><span>SHOULDER</span><strong id="shoulder">—</strong></div>
+          <div class="angle"><span>ELBOW</span><strong id="elbow">—</strong></div>
+          <div class="angle"><span>GRIPPER</span><strong id="gripper">OPEN</strong></div>
+        </div>
+        <div id="timeline" class="timeline"></div>
+        <div id="robotStatus" class="status">Waiting for object detection.</div>
+      </section>
+
+      <section class="card">
+        <div class="cardhead"><h3>04 / Before & After</h3><span class="tag">RESULT</span></div>
+        <div class="photos">
+          <div>
+            <p class="photo-title">Before Pick</p>
+            <img id="beforePhoto" alt="Original image" hidden>
+            <div id="beforeEmpty" class="empty">Original image will appear here.</div>
+          </div>
+          <div>
+            <p class="photo-title">After Place</p>
+            <img id="afterPhoto" alt="Simulated destination preview" hidden>
+            <div id="afterEmpty" class="empty">Execute the simulation to create a preview.</div>
+          </div>
+        </div>
+        <p class="hint">The robot workspace animates a crop of the detected object. This is a software simulation; it does not move the real object.</p>
+      </section>
+    </div>
+
+    <aside class="stack">
+      <section class="card">
+        <div class="cardhead"><h3>Task Configuration</h3><span class="tag">CONTROL</span></div>
+        <div class="field">
+          <label for="destinationPreset">Quick destination</label>
+          <select id="destinationPreset">
+            <option value="left">Left tray</option>
+            <option value="center">Center tray</option>
+            <option value="right">Right tray</option>
+            <option value="custom">Choose by clicking workspace</option>
+          </select>
+        </div>
+        <div class="field"><label>Selected source</label><div id="sourceInfo" class="status">No object selected.</div></div>
+        <div class="field"><label>Destination</label><div id="destinationInfo" class="status">Choose a destination.</div></div>
+        <div class="field"><label>Movement distance</label><div id="distanceInfo" class="status">—</div></div>
+      </section>
+
+      <section class="card">
+        <div class="cardhead"><h3>Execution Monitor</h3><span class="tag">LIVE</span></div>
+        <div id="monitor" class="status">System ready.</div>
+        <div class="field"><label>Last detection</label><div id="lastDetection" class="muted">None</div></div>
+        <div class="field"><label>Motion planner</label><div id="plannerState" class="muted">Idle</div></div>
+        <p class="muted small">This virtual robot is not connected to a physical robot.</p>
+      </section>
+    </aside>
+  </div>
+  <footer>VISION TO ACTION AI · Computer Vision & Virtual Robotics</footer>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+let stream = null;
+let cameraTimer = null;
+let cameraBusy = false;
+let latestCameraData = null;
+let detections = [];
+let selected = null;
+let originalData = null;
+let annotatedData = null;
+let source = {x:300,y:230};
+let current = {...source};
+let target = {x:430,y:285};
+let hasDestination = false;
+let gripperClosed = false;
+let isRunning = false;
+let animationFrame = null;
+let stageIndex = -1;
+let objectSprite = null;
+
+const L1 = 270;
+const L2 = 270;
+const base = {x:100,y:355};
+const stages = ["Approach","Grip","Lift","Transfer","Release","Complete"];
+const ctx = $("robotCanvas").getContext("2d");
+
+function setStatus(message, type="") {
+  $("cameraStatus").textContent = message;
+  $("cameraStatus").className = "status " + type;
+}
+
+function setRobotStatus(message, type="") {
+  $("robotStatus").textContent = message;
+  $("robotStatus").className = "status " + type;
+  $("monitor").textContent = message;
+}
+
+async function getJSON(response) {
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+  return data;
+}
+
+function showImages(data) {
+  originalData = data.original;
+  annotatedData = data.annotated;
+
+  $("annotatedImage").src = annotatedData;
+  $("annotatedImage").hidden = false;
+  $("inputEmpty").hidden = true;
+
+  $("beforePhoto").src = originalData;
+  $("beforePhoto").hidden = false;
+  $("beforeEmpty").hidden = true;
+
+  $("afterPhoto").hidden = true;
+  $("afterEmpty").hidden = false;
+}
+
+$("uploadDetectBtn").addEventListener("click", async () => {
+  const file = $("imageFile").files[0];
+  if (!file) {
+    setStatus("Please choose an image first.", "error");
+    return;
+  }
+
+  const form = new FormData();
+  form.append("image", file);
+  $("uploadDetectBtn").disabled = true;
+  setStatus("Detecting objects with YOLO...");
+
+  try {
+    const response = await fetch("/detect_image", {method:"POST", body:form});
+    const data = await getJSON(response);
+    handleDetection(data);
+    setStatus(`Detection complete: ${data.results.length} object(s).`, "ok");
+  } catch (error) {
+    setStatus(error.message, "error");
+  } finally {
+    $("uploadDetectBtn").disabled = false;
+  }
+});
+
+// Webcam controls: these handlers were missing in the previous package.
+const videoEl = $("video");
+const captureCanvas = $("captureCanvas");
+
+$("startBtn").addEventListener("click", async () => {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    setStatus("Camera is unavailable in this browser. Open http://127.0.0.1:5000 and allow camera access.", "error");
+    return;
+  }
+  try {
+    setStatus("Requesting camera permission...");
+    stream = await navigator.mediaDevices.getUserMedia({video: { facingMode: "user" }, audio: false});
+    videoEl.srcObject = stream;
+    videoEl.hidden = false;
+    $("annotatedImage").hidden = true;
+    $("inputEmpty").hidden = true;
+    await videoEl.play();
+    $("startBtn").disabled = true;
+    $("stopBtn").disabled = false;
+    $("captureBtn").disabled = false;
+    setStatus("Camera started. Click Capture & Detect to detect objects.", "ok");
+  } catch (error) {
+    setStatus("Could not start camera: " + (error.message || error.name) + ". Allow camera permission in Chrome and close other apps using the camera.", "error");
+  }
+});
+
+$("stopBtn").addEventListener("click", () => {
+  if (stream) stream.getTracks().forEach(track => track.stop());
+  stream = null;
+  videoEl.srcObject = null;
+  videoEl.hidden = true;
+  $("startBtn").disabled = false;
+  $("stopBtn").disabled = true;
+  $("captureBtn").disabled = true;
+  setStatus("Camera stopped.");
+});
+
+$("captureBtn").addEventListener("click", async () => {
+  if (!stream || !videoEl.videoWidth || !videoEl.videoHeight) {
+    setStatus("Start the camera and wait for the live preview first.", "error");
+    return;
+  }
+  if (cameraBusy) return;
+  cameraBusy = true;
+  $("captureBtn").disabled = true;
+  setStatus("Detecting objects in camera frame with YOLO...");
+  try {
+    captureCanvas.width = videoEl.videoWidth;
+    captureCanvas.height = videoEl.videoHeight;
+    captureCanvas.getContext("2d").drawImage(videoEl, 0, 0, captureCanvas.width, captureCanvas.height);
+    const image = captureCanvas.toDataURL("image/jpeg", 0.88);
+    const response = await fetch("/detect_frame", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({image})
+    });
+    const data = await getJSON(response);
+    latestCameraData = data;
+    handleDetection(data);
+    videoEl.hidden = false;
+    $("annotatedImage").hidden = true;
+    setStatus(`Camera detection complete: ${data.results.length} object(s).`, "ok");
+  } catch (error) {
+    setStatus("Camera detection failed: " + error.message, "error");
+  } finally {
+    cameraBusy = false;
+    $("captureBtn").disabled = !stream;
+  }
+});
+
+function handleDetection(data) {
+  if (!Array.isArray(data.results)) {
+    setRobotStatus("Unexpected server response: results are missing.", "error");
+    return;
+  }
+
+  showImages(data);
+  detections = data.results;
+  selected = null;
+  hasDestination = false;
+  isRunning = false;
+  stageIndex = -1;
+
+  $("objectCount").textContent = detections.length;
+  $("selectedName").textContent = "None";
+  $("taskStatus").textContent = "Detected";
+  $("sourceInfo").textContent = "No object selected.";
+  $("destinationInfo").textContent = "Select an object and destination.";
+  $("distanceInfo").textContent = "—";
+  $("angleBtn").disabled = true;
+  $("executeBtn").disabled = true;
+  $("lastDetection").textContent = new Date().toLocaleTimeString();
+  $("plannerState").textContent = "Waiting for selection";
+  $("timeline").replaceChildren();
+
+  renderObjects();
+  drawRobot();
+
+  setRobotStatus(
+    detections.length
+      ? "Choose an object from the Detected Objects list."
+      : "No objects found. Try another image."
+  );
+}
+
+function renderObjects() {
+  const list = $("objectList");
+  list.replaceChildren();
+
+  if (!detections.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "No objects found. Try another image.";
+    list.appendChild(empty);
+    return;
+  }
+
+  detections.forEach((d, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "object" + (selected === index ? " selected" : "");
+
+    const title = document.createElement("strong");
+    title.textContent = `${index + 1}. ${d.name}`;
+
+    const detail = document.createElement("span");
+    detail.textContent = `${d.confidence}% confidence · (${d.camera_x}, ${d.camera_y})`;
+
+    button.append(title, detail);
+    button.addEventListener("click", () => selectObject(index));
+    list.appendChild(button);
+  });
+}
+
+function selectObject(index) {
+  if (isRunning) return;
+
+  selected = index;
+  const d = detections[index];
+
+  const imageWidth = Math.max(1, Number(d.image_width) || 640);
+  const imageHeight = Math.max(1, Number(d.image_height) || 480);
+
+  // Approximate mapping from image position into the virtual arm workspace.
+  source = {
+    x: 240 + (Number(d.camera_x) / imageWidth) * 140,
+    y: 180 + (Number(d.camera_y) / imageHeight) * 100
+  };
+
+  source.x = Math.max(220, Math.min(390, source.x));
+  source.y = Math.max(150, Math.min(280, source.y));
+  current = {...source};
+
+  $("selectedName").textContent = d.name;
+  $("sourceInfo").textContent = `${d.name} · (${d.camera_x}, ${d.camera_y})`;
+
+  const presets = getPresets();
+  const preset = $("destinationPreset").value;
+
+  if (presets[preset]) {
+    target = {...presets[preset]};
+    hasDestination = true;
+    updateDestination();
+  } else {
+    hasDestination = false;
+    $("angleBtn").disabled = true;
+    $("executeBtn").disabled = true;
+    $("destinationInfo").textContent = "Click the workspace to choose.";
+    $("distanceInfo").textContent = "—";
+    drawRobot();
+    setRobotStatus(`Selected ${d.name}. Choose a destination.`);
+  }
+
+  renderObjects();
+}
+
+function getPresets() {
+  return {
+    left: {x:430,y:285},
+    center: {x:520,y:285},
+    right: {x:610,y:285}
+  };
+}
+
+$("destinationPreset").addEventListener("change", event => {
+  if (isRunning) return;
+
+  const presets = getPresets();
+
+  if (presets[event.target.value]) {
+    target = {...presets[event.target.value]};
+    hasDestination = true;
+    updateDestination();
+  } else {
+    hasDestination = false;
+    $("angleBtn").disabled = true;
+    $("executeBtn").disabled = true;
+    $("destinationInfo").textContent = "Click the workspace to choose.";
+    $("distanceInfo").textContent = "—";
+    drawRobot();
+    setRobotStatus("Click a destination in the robot workspace.");
+  }
+});
+
+$("robotCanvas").addEventListener("click", event => {
+  if (isRunning) return;
+
+  if (selected === null) {
+    setRobotStatus("Select a detected object first.", "error");
+    return;
+  }
+
+  const rect = $("robotCanvas").getBoundingClientRect();
+  target = {
+    x: (event.clientX - rect.left) * $("robotCanvas").width / rect.width,
+    y: (event.clientY - rect.top) * $("robotCanvas").height / rect.height
+  };
+
+  target.x = Math.max(200, Math.min(650, target.x));
+  target.y = Math.max(130, Math.min(320, target.y));
+
+  $("destinationPreset").value = "custom";
+  hasDestination = true;
+  updateDestination();
+});
+
+function solveIK(point) {
+  const dx = point.x - base.x;
+  const dy = base.y - point.y;
+  const distanceSquared = dx*dx + dy*dy;
+  const distance = Math.sqrt(distanceSquared);
+
+  const reachable = distance <= L1 + L2 && distance >= Math.abs(L1-L2);
+
+  const cosElbow = Math.max(-1, Math.min(1,
+    (distanceSquared - L1*L1 - L2*L2) / (2*L1*L2)
+  ));
+
+  const elbow = Math.acos(cosElbow);
+  const shoulder = Math.atan2(dy, dx) -
+    Math.atan2(L2*Math.sin(elbow), L1 + L2*Math.cos(elbow));
+
+  return {
+    shoulder: shoulder * 180 / Math.PI,
+    elbow: elbow * 180 / Math.PI,
+    reachable
+  };
+}
+
+function updateAngles(point) {
+  const angles = solveIK(point);
+  $("shoulder").textContent = angles.shoulder.toFixed(1) + "°";
+  $("elbow").textContent = angles.elbow.toFixed(1) + "°";
+  $("gripper").textContent = gripperClosed ? "CLOSED" : "OPEN";
+  return angles;
+}
+
+function updateDestination() {
+  const distance = Math.hypot(target.x-source.x, target.y-source.y);
+
+  $("destinationInfo").textContent =
+    `(${target.x.toFixed(0)}, ${target.y.toFixed(0)})`;
+  $("distanceInfo").textContent = distance.toFixed(1);
+
+  const canPlan = selected !== null && hasDestination && !isRunning;
+  $("angleBtn").disabled = !canPlan;
+  $("executeBtn").disabled = !canPlan;
+
+  drawRobot();
+  setRobotStatus(
+    canPlan
+      ? "Destination set. Click Calculate Angles."
+      : "Select an object and destination first."
+  );
+}
+
+$("angleBtn").addEventListener("click", () => {
+  if (selected === null || !hasDestination) {
+    setRobotStatus("Select an object and destination first.", "error");
+    return;
+  }
+
+  const sourceAngles = solveIK(source);
+  const targetAngles = solveIK(target);
+
+  if (!sourceAngles.reachable || !targetAngles.reachable) {
+    setRobotStatus("Source or destination is outside the robot's reachable area. Choose a closer destination.", "error");
+    $("executeBtn").disabled = true;
+    return;
+  }
+
+  updateAngles(target);
+  $("executeBtn").disabled = false;
+  $("plannerState").textContent = "Angles calculated";
+  setRobotStatus("Joint angles calculated. Execute Pick & Place.");
+});
+
+function drawGrid() {
+  const canvas = $("robotCanvas");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#08111e";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "#17283d";
+  ctx.lineWidth = 1;
+
+  for (let x=0; x<900; x+=30) {
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,440); ctx.stroke();
+  }
+  for (let y=0; y<440; y+=30) {
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(900,y); ctx.stroke();
+  }
+
+  ctx.fillStyle = "#9aabc3";
+  ctx.font = "12px Segoe UI";
+  ctx.fillText("2D ROBOT WORKSPACE · SELECT A DESTINATION",18,25);
+
+  const trays = [
+    {x:430,label:"LEFT TRAY",color:"#42e8dc"},
+    {x:520,label:"CENTER TRAY",color:"#6685ff"},
+    {x:610,label:"RIGHT TRAY",color:"#b58cff"}
+  ];
+
+  trays.forEach(tray => {
+    ctx.fillStyle = "#152b40";
+    ctx.fillRect(tray.x-36,293,72,37);
+    ctx.strokeStyle = tray.color;
+    ctx.strokeRect(tray.x-36,293,72,37);
+    ctx.fillStyle = "#cbd7e9";
+    ctx.font = "10px Segoe UI";
+    ctx.textAlign = "center";
+    ctx.fillText(tray.label,tray.x,316);
+  });
+  ctx.textAlign = "left";
+}
+
+function makeObjectSprite(d) {
+  if (!originalData || !d) return;
+  const image = new Image();
+  image.onload = () => {
+    const x1 = Math.max(0, Number(d.x1) || 0);
+    const y1 = Math.max(0, Number(d.y1) || 0);
+    const x2 = Math.min(image.naturalWidth, Number(d.x2) || image.naturalWidth);
+    const y2 = Math.min(image.naturalHeight, Number(d.y2) || image.naturalHeight);
+    if (x2 <= x1 || y2 <= y1) return;
+    const crop = document.createElement("canvas");
+    crop.width = Math.max(1, Math.round(x2-x1));
+    crop.height = Math.max(1, Math.round(y2-y1));
+    crop.getContext("2d").drawImage(image, x1, y1, x2-x1, y2-y1, 0, 0, crop.width, crop.height);
+    objectSprite = crop;
+    drawRobot();
+  };
+  image.src = originalData;
+}
+
+function drawObject(point, label) {
+  const w = 46, h = 42;
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,.45)";
+  ctx.shadowBlur = 8;
+  if (objectSprite) {
+    const ratio = Math.min(w / objectSprite.width, h / objectSprite.height);
+    const dw = Math.max(20, objectSprite.width * ratio);
+    const dh = Math.max(20, objectSprite.height * ratio);
+    ctx.fillStyle = "#f2f7ff";
+    ctx.strokeStyle = "#42e8dc";
+    ctx.lineWidth = 2;
+    ctx.fillRect(point.x-dw/2-3, point.y-dh/2-3, dw+6, dh+6);
+    ctx.drawImage(objectSprite, point.x-dw/2, point.y-dh/2, dw, dh);
+    ctx.strokeRect(point.x-dw/2-3, point.y-dh/2-3, dw+6, dh+6);
+  } else {
+    ctx.fillStyle = "#d5a34b";
+    ctx.strokeStyle = "#f1f7ff";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(point.x-19,point.y-13,38,26,4);
+    ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+  ctx.fillStyle = "#fff";
+  ctx.font = "11px Segoe UI";
+  ctx.textAlign = "center";
+  ctx.fillText(label,point.x,point.y-29);
+  ctx.textAlign = "left";
+}
+
+function drawRobot() {
+  const canvas = $("robotCanvas");
+  if (!canvas || !ctx) return;
+  drawGrid();
+  // Target marker
+  if (hasDestination) {
+    ctx.save(); ctx.strokeStyle = "#42e8dc"; ctx.lineWidth = 3;
+    ctx.setLineDash([7,5]); ctx.beginPath(); ctx.arc(target.x,target.y,25,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "#42e8dc"; ctx.font = "bold 12px Segoe UI"; ctx.fillText("DESTINATION",target.x-38,target.y-34); ctx.restore();
+  }
+  const p = current || source;
+  const dx = p.x-base.x, dy = base.y-p.y;
+  let dist = Math.hypot(dx,dy);
+  dist = Math.max(1,Math.min(L1+L2-1,dist));
+  const a = Math.atan2(dy,dx);
+  const c = Math.max(-1,Math.min(1,(dist*dist+L1*L1-L2*L2)/(2*dist*L1)));
+  const shoulder = a - Math.acos(c);
+  const elbow = {x:base.x+L1*Math.cos(shoulder), y:base.y-L1*Math.sin(shoulder)};
+  const wrist = {x:p.x,y:p.y};
+  // base and links
+  ctx.lineCap="round"; ctx.lineJoin="round";
+  ctx.strokeStyle="#6685ff"; ctx.lineWidth=22; ctx.beginPath(); ctx.moveTo(base.x,base.y); ctx.lineTo(elbow.x,elbow.y); ctx.stroke();
+  ctx.strokeStyle="#42e8dc"; ctx.lineWidth=18; ctx.beginPath(); ctx.moveTo(elbow.x,elbow.y); ctx.lineTo(wrist.x,wrist.y); ctx.stroke();
+  [[base.x,base.y,24,"#263e5c"],[base.x,base.y,13,"#a8baff"],[elbow.x,elbow.y,12,"#a8baff"],[wrist.x,wrist.y,10,"#42e8dc"]].forEach(([x,y,r,col])=>{ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();});
+  ctx.fillStyle="#9aabc3";ctx.font="12px Segoe UI";ctx.fillText("BASE",base.x-18,base.y+44);
+  // Draw detected object at source until it is picked, then at the gripper/current endpoint.
+  if (selected !== null && detections[selected]) {
+    const objPoint = (isRunning && gripperClosed) ? wrist : source;
+    drawObject(objPoint, detections[selected].name || "object");
+  }
+  // gripper fingers
+  const angle=Math.atan2(wrist.y-elbow.y,wrist.x-elbow.x);
+  const gx=Math.cos(angle), gy=Math.sin(angle), px=-gy, py=gx;
+  const gap=gripperClosed?5:15;
+  ctx.strokeStyle="#e6efff";ctx.lineWidth=5;
+  ctx.beginPath();ctx.moveTo(wrist.x+px*gap,wrist.y+py*gap);ctx.lineTo(wrist.x+px*(gap+13)+gx*8,wrist.y+py*(gap+13)+gy*8);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(wrist.x-px*gap,wrist.y-py*gap);ctx.lineTo(wrist.x-px*(gap+13)+gx*8,wrist.y-py*(gap+13)+gy*8);ctx.stroke();
+}
+
+
+function renderAfterPlacePreview(){
+  const after=$("afterPhoto");
+  const det=(selected!==null && detections[selected]) ? detections[selected] : null;
+  if(!originalData || !det){ after.src=originalData; after.hidden=false; $("afterEmpty").hidden=true; return; }
+  const img=new Image();
+  img.onload=()=>{
+    const canvas=document.createElement("canvas"); canvas.width=img.naturalWidth; canvas.height=img.naturalHeight;
+    const c=canvas.getContext("2d"); c.drawImage(img,0,0);
+    const x1=Math.max(0,Math.round(Number(det.x1)||0)), y1=Math.max(0,Math.round(Number(det.y1)||0));
+    const x2=Math.min(img.naturalWidth,Math.round(Number(det.x2)||img.naturalWidth)), y2=Math.min(img.naturalHeight,Math.round(Number(det.y2)||img.naturalHeight));
+    const w=Math.max(1,x2-x1), h=Math.max(1,y2-y1);
+    // A visible simulated erase patch at the original location (not physical image inpainting).
+    const sampleX=Math.max(0,Math.min(img.naturalWidth-1,x1+w/2)), sampleY=Math.max(0,Math.min(img.naturalHeight-1,y1+h/2));
+    c.save(); c.filter="blur(14px)"; c.drawImage(img,Math.max(0,x1-12),Math.max(0,y1-12),Math.min(img.naturalWidth-x1,w+24),Math.min(img.naturalHeight-y1,h+24),x1,y1,w,h); c.restore();
+    c.fillStyle="rgba(8,17,30,0.30)"; c.fillRect(x1,y1,w,h);
+    // Map workspace target to a visible destination inside the photo preview.
+    const tx=Math.max(0.12,Math.min(0.88,(target.x-200)/(650-200)))*canvas.width;
+    const ty=Math.max(0.15,Math.min(0.82,(target.y-130)/(320-130)))*canvas.height;
+    const scale=Math.min(1, Math.min(canvas.width*0.34/w,canvas.height*0.34/h));
+    const dw=Math.max(24,w*scale), dh=Math.max(24,h*scale);
+    c.save(); c.shadowColor="rgba(0,0,0,.35)"; c.shadowBlur=12; c.drawImage(img,x1,y1,w,h,tx-dw/2,ty-dh/2,dw,dh); c.restore();
+    c.strokeStyle="#42e8dc"; c.lineWidth=Math.max(3,canvas.width/350); c.setLineDash([8,6]); c.strokeRect(tx-dw/2,ty-dh/2,dw,dh); c.setLineDash([]);
+    c.fillStyle="#0b2230"; c.fillRect(Math.max(0,tx-dw/2),Math.max(0,ty-dh/2-28),Math.min(dw+30,canvas.width),24);
+    c.fillStyle="#42e8dc"; c.font=`bold ${Math.max(14,canvas.width/65)}px Segoe UI`; c.fillText("SIMULATED PLACE",Math.max(4,tx-dw/2+5),Math.max(18,ty-dh/2-10));
+    after.src=canvas.toDataURL("image/jpeg",0.92); after.hidden=false; $("afterEmpty").hidden=true;
+  };
+  img.onerror=()=>{after.src=originalData;after.hidden=false;$("afterEmpty").hidden=true;};
+  img.src=originalData;
+}
+
+function sleep(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
+$("executeBtn").addEventListener("click", async () => {
+  if (selected===null || !hasDestination) { setRobotStatus("Select an object and destination first.","error"); return; }
+  const sa=solveIK(source), ta=solveIK(target);
+  if(!sa.reachable || !ta.reachable){setRobotStatus("Choose a reachable destination.","error");return;}
+  isRunning=true; $("executeBtn").disabled=true; $("angleBtn").disabled=true;
+  const timeline=$("timeline"); timeline.replaceChildren();
+  const labels=["Approach","Grip","Lift","Transfer","Release","Complete"];
+  async function move(from,to,duration=550){
+    const start=performance.now();
+    await new Promise(resolve=>{
+      function frame(now){const t=Math.min(1,(now-start)/duration);current={x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t};drawRobot();if(t<1)requestAnimationFrame(frame);else resolve();}
+      requestAnimationFrame(frame);
+    });
+  }
+  try {
+    for(let i=0;i<labels.length;i++){
+      stageIndex=i; const chip=document.createElement("span");chip.className="stage";chip.textContent="✓ "+labels[i];timeline.appendChild(chip);
+      $("plannerState").textContent=labels[i];
+      if(i===0){await move(current,source);setRobotStatus("Robot arm approaching detected object.");}
+      if(i===1){gripperClosed=true;drawRobot();setRobotStatus("Gripper closed: object picked.");}
+      if(i===2){await move(source,{x:source.x,y:Math.max(100,source.y-65)});}
+      if(i===3){await move(current,{x:target.x,y:Math.max(100,target.y-25)});await move(current,target);setRobotStatus("Carrying object to destination.");}
+      if(i===4){gripperClosed=false;drawRobot();setRobotStatus("Object released at destination.");}
+      if(i===5){
+        renderAfterPlacePreview();
+        setRobotStatus("Pick-and-place simulation completed. After Place shows a simulated object relocation.","ok");
+      }
+      await sleep(180);
+    }
+  } catch(err){setRobotStatus("Animation error: "+err.message,"error");}
+  finally {isRunning=false;current={...target};drawRobot();$("angleBtn").disabled=!(selected!==null&&hasDestination);$("executeBtn").disabled=!(selected!==null&&hasDestination);$("gripper").textContent=gripperClosed?"CLOSED":"OPEN";}
+});
+
+// Paint the workspace immediately, even before an image is uploaded.
+drawRobot();
+
+</script>
+</body>
+</html>
